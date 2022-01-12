@@ -76,4 +76,6 @@ for words in data:
 for wordLine in wordLines:
     for word in wordLine:
         if(re.match('[a-zA-Z]', word)):
-            print(word + ": " + str(calcDictDistance(word, 3))) 
+            suggestions = calcDictDistance(word, 3)
+            if(len(suggestions) > 0):
+                print(word + ": " + str(suggestions))
