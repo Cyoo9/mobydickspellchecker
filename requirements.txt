@@ -1,0 +1,4 @@
+## Requirements need for this python project
+numpy
+nltk
+pybktree

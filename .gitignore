@@ -1,0 +1,9 @@
+# Ignore VSCode
+.vscode
+# Ignore IDEA
+.idea
+
+# Ignore virtual environments
+.venv
+__pycache__
+

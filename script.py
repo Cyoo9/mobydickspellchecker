@@ -1,8 +1,8 @@
 import numpy
 import re
-f = open("./mobydick.txt", 'r')
-data = f.readlines()
-
+from timeit import default_timer as timer
+from tokenizer import word_tokenize_txt
+from wordtree import word_tree
 
 def levenshteinDistanceDP(token1, token2):
     distances = numpy.zeros((len(token1) + 1, len(token2) + 1))
@@ -36,46 +36,56 @@ def levenshteinDistanceDP(token1, token2):
     # printDistances(distances, len(token1), len(token2))
     return distances[len(token1)][len(token2)] # minimum edit distance + 1
 
-def printDistances(distances, token1Length, token2Length):
-    for t1 in range(token1Length + 1):
-        for t2 in range(token2Length + 1):
-            print(int(distances[t1][t2]), end=" ")
-        print()
+## Print the edit distances for DEBUG purposes
+# def printDistances(distances, token1Length, token2Length):
+#     for t1 in range(token1Length + 1):
+#         for t2 in range(token2Length + 1):
+#             print(int(distances[t1][t2]), end=" ")
+#         print()
 
-def calcDictDistance(word, numWords):
-    file = open('dictionary.txt', 'r') 
-    lines = file.readlines() 
-    file.close()
-    dictWordDist = []
-    wordIdx = 0
+# Load the dictionary file into a set of words
+dictionary_words: set[str]=set()
+with open('dictionary.txt', 'r') as dict_file:
+    for line in dict_file.readlines():
+        dictionary_words.add(line.strip())
+
+# def calcDictDistance(word, numWords):
+#     word_distances: list[tuple[str, int]] = []
+
+#     # Go through all the words in the dictionary
+#     for dict_word in dictionary_words:
+#         word_dist = levenshteinDistanceDP(word, dict_word)
+#         if word_dist >= 10:
+#             word_dist = 9
+
+#         # Add the word distances to the list
+#         word_distances.append((dict_word, word_dist))
     
-    for line in lines: 
-        wordDistance = levenshteinDistanceDP(word, line.strip())
-        if wordDistance >= 10:
-            wordDistance = 9
-        dictWordDist.append(str(int(wordDistance)) + "-" + line.strip())
-        wordIdx = wordIdx + 1
+#     # Sort the list
+#     word_distances.sort(key=lambda tup: tup[1])
 
-    closestWords = []
-    wordDetails = []
-    currWordDist = 0
-    dictWordDist.sort() # sort from least to greatest edit distance
-    for i in range(numWords):
-        currWordDist = dictWordDist[i]
-        wordDetails = currWordDist.split("-")
-        if(wordDetails[1] == word):
-            return []
-        closestWords.append(wordDetails[1])
+#     return [ word_distances[i][0] for i in range(numWords) ]
 
-    return closestWords
+corrected_words = { }
+def get_correct_words(word: str, numWords: int) -> list[str]:
+    results = None
+    # Check if same word has already been corrected
+    if word in corrected_words:
+        results = corrected_words[word]
+    else:
+        # Use the word tree to find all words w/ a min edit distance of <= 4 compared to the word
+        results = sorted(word_tree.find(word, 4))
+        corrected_words[word] = results
 
-wordLines = []
-for words in data:
-    wordLines.append(words.split(' '))
+    return [ results[i][1] for i in range(min(len(results), numWords)) ]
 
-for wordLine in wordLines:
-    for word in wordLine:
-        if(re.match('[a-zA-Z]', word)):
-            suggestions = calcDictDistance(word, 3)
-            if(len(suggestions) > 0):
-                print(word + ": " + str(suggestions))
+tokens = []
+
+with open("./mobydick.txt", 'r') as f:
+    tokens = word_tokenize_txt(f.read())
+
+for word in tokens:
+    if word not in dictionary_words:
+        suggestions = get_correct_words(word, 3)
+        if(len(suggestions) > 0):
+            print(word + ": " + str(suggestions))
